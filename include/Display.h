@@ -40,5 +40,7 @@ public:
     void showProgressBar(const long progressMs, const long durationMs);
 
     void showImageLoading();
+
+    void showVolume(const unsigned short volume);
 };
 #endif

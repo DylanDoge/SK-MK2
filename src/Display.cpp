@@ -139,3 +139,13 @@ void Display::showImageLoading()
     tft.setTextColor(0xffff);
     tft.print("Loading...");
 }
+
+void Display::showVolume(const unsigned short volume)
+{
+    const String volumeStr = String(volume);
+    tft.fillRect(0, 449, 50, 23, TFT_BLACK);
+    tft.setCursor(2,450);
+    tft.setTextSize(2);
+    tft.setTextColor(0xffff);
+    tft.print(volumeStr);
+}

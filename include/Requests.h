@@ -26,10 +26,6 @@ public:
 
     void addFetchAuthHeader(String authorization);
 
-    void processResponse();
-
-    void acquireAuthToken(const char authorization[66], const char refreshToken[132]);
-
     void clearResponse();
 
     char* getResponse();

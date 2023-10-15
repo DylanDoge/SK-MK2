@@ -54,16 +54,6 @@ void Requests::addFetchAuthHeader(String authorization)
     http.addHeader("Content-Type", "application/x-www-form-urlencoded");
 }
 
-void Requests::processResponse()
-{
-    
-}
-
-void Requests::acquireAuthToken(const char authorization[66], const char refreshToken[132])
-{
-    
-}
-
 void Requests::clearResponse()
 {
     this->contentResponse = "";

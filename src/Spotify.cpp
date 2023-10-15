@@ -66,6 +66,11 @@ char* Spotify::getItemID()
     return this->item_ID;
 }
 
+unsigned short Spotify::getRefreshTime()
+{
+    return this->refreshTime;
+}
+
 bool Spotify::getIsPlaying()
 {
     return this->is_playing;
@@ -81,6 +86,21 @@ bool Spotify::getUpdateImage()
     return this->updateImage;
 }
 
+bool Spotify::getClientVolumeChanged()
+{
+    return this->clientVolumeChanged;
+}
+
+void Spotify::toggleClientVolumeChanged()
+{
+    this->clientVolumeChanged = !this->clientVolumeChanged;
+}
+
+void Spotify::enableClientVolumeChanged()
+{
+    this->clientVolumeChanged = true;
+}
+
 void Spotify::toggleUpdateTrack()
 {
     this->updateTrack = !this->updateTrack;
@@ -89,6 +109,11 @@ void Spotify::toggleUpdateTrack()
 void Spotify::toggleUpdateImage()
 {
     this->updateImage = !this->updateImage;
+}
+
+void Spotify::setVolume(short newVolume)
+{
+    this->volumeProcent = newVolume;
 }
 
 void Spotify::addTimeToProgressMs(unsigned long time)
@@ -126,6 +151,10 @@ short Spotify::getProgressSec()
     return this->progress_sec;
 }
 
+short Spotify::getVolumeProcent()
+{
+    return this->volumeProcent;
+}
 
 bool Spotify::handleAccessTokenResponse(short response)
 {
@@ -144,6 +173,7 @@ bool Spotify::handleAccessTokenResponse(short response)
 
 bool Spotify::handleRefreshPlayerInfoResponse(short response)
 {
+    // Boolean value for retry
     bool okResponse = false;
     if (response == 401)
     {
@@ -156,10 +186,12 @@ bool Spotify::handleRefreshPlayerInfoResponse(short response)
         const char name[12] = "Not playing";
         memcpy(this->item_name, name, strlen(name)+1);
         okResponse = true;
+        this->refreshTime = 5000;
     }
     if (response == 200)
     {
         okResponse = true;
+        this->refreshTime = 1500;
     }
     return okResponse;
 }
@@ -242,9 +274,13 @@ void Spotify::deserializePlayerState(char *data)
     this->deviceActive = device["is_active"]; // true
     this->isRestricted = device["is_restricted"]; // false
     this->supportsVolume = device["supports_volume"]; // true
-    this->volumeProcent = device["volume_percent"]; // 100
+    if (!clientVolumeChanged)
+    {
+        this->volumeProcent = device["volume_percent"]; // 100
+    }
 
     this->shuffle_state = doc["shuffle_state"]; // false
+    this->rewinedTrack = (doc["progress_ms"] < this->progress_ms) ? 1 : 0;
     this->progress_ms = doc["progress_ms"]; // 22032
     this->is_playing = doc["is_playing"]; // true
     
@@ -339,4 +375,14 @@ void Spotify::setMsToMinuteAndSec()
     
     this->progress_min = minutes;
     this->progress_sec = sec;
+}
+
+bool Spotify::getRewinedTrack()
+{
+    return this->rewinedTrack;
+}
+
+void Spotify::toggleRewindedTrack()
+{
+    this->rewinedTrack = !(this->rewinedTrack);
 }

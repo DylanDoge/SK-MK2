@@ -54,6 +54,10 @@ private:
     bool updateImage;
     bool updateTrack;
     bool rewinedTrack;
+    bool clientVolumeChanged = false;
+
+    // GET player info refreshTime
+    unsigned short refreshTime = 1500;
 public:
     Spotify() {}
     Spotify(const char ID[33], const char secret[33], const char refresh[132]);
@@ -76,15 +80,34 @@ public:
 
     char* getItemID();
 
+    unsigned short getRefreshTime();
+
     bool getIsPlaying();
 
     bool getUpdateTrack();
 
     bool getUpdateImage();
+    
+    /*----------------------------------------
+     *   Volume for Rotary Encoder
+     *----------------------------------------*/
+    /* Changes or retrevies boolean state for clientVolumeChanged.
+     *
+     * Example: if volume is changed clientVolumeChanged will 
+     * become true, and toggles to false only after sending it to
+     * the Spotify API. 
+    */
+    bool getClientVolumeChanged();
+
+    void toggleClientVolumeChanged();
+
+    void enableClientVolumeChanged();
 
     void toggleUpdateTrack();
 
     void toggleUpdateImage();
+
+    void setVolume(short newVolume);
 
     void addTimeToProgressMs(unsigned long time);
 
@@ -100,6 +123,8 @@ public:
 
     short getProgressSec();
 
+    short getVolumeProcent();
+
     bool handleAccessTokenResponse(short response);
     
     bool handleRefreshPlayerInfoResponse(short response);
@@ -109,6 +134,10 @@ public:
     void deserializePlayerState(char *data);
 
     void setMsToMinuteAndSec();
+
+    bool getRewinedTrack();
+
+    void toggleRewindedTrack();
 };
 
 #endif

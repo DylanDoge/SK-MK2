@@ -65,6 +65,11 @@ char* Requests::getResponse()
     return contentResponseChar;
 }
 
+String Requests::getResponseString()
+{
+    return this->contentResponse;
+}
+
 bool Requests::getFile(String url, const char *filename)
 {
 

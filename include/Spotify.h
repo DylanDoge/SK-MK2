@@ -29,6 +29,7 @@ private:
     char image_url[65];
     // Asuming all track IDs are 22 char long.
     char item_ID[23];
+    char linked_track_ID[23];
     bool is_local;
     // Set max length for track name.
     char item_name[82];
@@ -59,6 +60,13 @@ private:
     // GET player info refreshTime
     unsigned short refreshTime = 1500;
 public:
+    bool clientActionChange;
+    bool togglePlaying;
+    bool beginNext;
+    bool beginPrev;
+    bool toggleShuffle;
+    bool beginLike;
+
     Spotify() {}
     Spotify(const char ID[33], const char secret[33], const char refresh[132]);
     
@@ -80,9 +88,13 @@ public:
 
     char* getItemID();
 
+    char* getLinkedID();
+
     unsigned short getRefreshTime();
 
     bool getIsPlaying();
+
+    bool getShuffleState();
 
     bool getUpdateTrack();
 
@@ -106,6 +118,10 @@ public:
     void toggleUpdateTrack();
 
     void toggleUpdateImage();
+
+    void toggleIsPlaying();
+
+    void toggleShuffleState();
 
     void setVolume(short newVolume);
 

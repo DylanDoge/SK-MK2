@@ -8,6 +8,11 @@
 
 #define RotaryA 17
 #define RotaryB 18
+#define playPauseSwitch 39
+#define nextSwitch 40
+#define prevSwitch 41
+#define shuffleSwitch 42
+#define likeSwitch 1
 
 Spotify spotify(clientId, clientSecret, refreshToken);
 Wireless wireless(ssid, password);
@@ -120,6 +125,36 @@ void encoder(void * parameters)
     }
 }
 
+void switches()
+{
+    if (digitalRead(playPauseSwitch) == LOW)
+    {
+        // set playPause
+        spotify.togglePlaying = true;
+    }
+    if (digitalRead(nextSwitch) == LOW)
+    {
+        // set next
+        spotify.beginNext = true;
+    }
+    if (digitalRead(prevSwitch) == LOW)
+    {
+        // set prev
+        spotify.beginPrev = true;
+    }
+    if (digitalRead(shuffleSwitch) == LOW)
+    {
+        // set toggleShuffle
+        spotify.toggleShuffle = true;
+    }
+    if (digitalRead(likeSwitch) == LOW)
+    {
+        // set like
+        spotify.beginLike = true;
+    }
+    spotify.clientActionChange = true;
+}
+
 void displayUpdate(void * parameters)
 {
     long oneSecTimeout = millis();
@@ -171,7 +206,79 @@ void spotifyUpdate(void * parameters)
     unsigned long encoderTimeout = millis();
     for (;;) 
     {
-        // sensorCheck();
+        // Check if switches has triggered.
+        if (spotify.clientActionChange)
+        {
+            if (spotify.togglePlaying)
+            {
+                if (spotify.getIsPlaying())
+                {
+                    requests.begin("https://api.spotify.com/v1/me/player/pause");
+                }
+                else
+                {
+                    requests.begin("https://api.spotify.com/v1/me/player/play");
+                }
+                requests.addAuthHeader(spotify.getAccessToken());
+                requests.send("PUT", "");
+                spotify.togglePlaying = false;
+                spotify.toggleIsPlaying();
+            }
+            if (spotify.beginNext)
+            {
+                requests.begin("https://api.spotify.com/v1/me/player/next");
+                requests.addAuthHeader(spotify.getAccessToken());
+                requests.send("POST", "");
+                spotify.beginNext = false;
+            }
+            if (spotify.beginPrev)
+            {
+                requests.begin("https://api.spotify.com/v1/me/player/previous");
+                requests.addAuthHeader(spotify.getAccessToken());
+                requests.send("POST", "");
+                spotify.beginPrev = false;
+            }
+            if (spotify.toggleShuffle)
+            {
+                if (spotify.getShuffleState())
+                {
+                    requests.begin("https://api.spotify.com/v1/me/player/shuffle?state=false");
+                }
+                else
+                {
+                    requests.begin("https://api.spotify.com/v1/me/player/shuffle?state=true");
+                }
+                requests.addAuthHeader(spotify.getAccessToken());
+                requests.send("PUT", "");
+                spotify.toggleShuffle = false;
+                spotify.toggleShuffleState();
+            }
+            if (spotify.beginLike)
+            {
+                requests.clearResponse();
+                requests.begin("https://api.spotify.com/v1/me/tracks/contains?ids=" + String(spotify.getItemID()) + "," + String(spotify.getLinkedID()));
+                requests.addAuthHeader(spotify.getAccessToken());
+                requests.send("GET", "");
+                if (requests.getResponseString() == "[ false, false ]" || requests.getResponseString() == "[ false ]")
+                {
+                    Serial.println("Liked!");
+                    requests.begin("https://api.spotify.com/v1/me/tracks?ids=" + String(spotify.getItemID()));
+                    requests.addAuthHeader(spotify.getAccessToken());
+                    requests.send("PUT", "");
+                    // Add easter egg song 1 in 500k.
+                    if (random(0, 500000) == 42069)
+                    {
+                        requests.begin("https://api.spotify.com/v1/me/tracks?ids=6iD9kcWB4h25t7OX8Xk6wT");
+                        requests.addAuthHeader(spotify.getAccessToken());
+                        requests.send("PUT", "");
+                    }
+                }            
+                spotify.beginLike = false;
+            }
+            spotify.clientActionChange = false;
+        }
+
+        // Send volume if changed by encoder.
         if ((millis()-encoderTimeout) >= 700 && spotify.getClientVolumeChanged())
         {
             String url = "https://api.spotify.com/v1/me/player/volume?volume_percent=" + String(spotify.getVolumeProcent());
@@ -181,6 +288,8 @@ void spotifyUpdate(void * parameters)
             spotify.toggleClientVolumeChanged();
             encoderTimeout = millis();
         }
+
+        // Retrieve Spotify playback info.
         if ((millis() - updateTimeout) >= spotify.getRefreshTime())
         {
             int t = millis();
@@ -189,6 +298,8 @@ void spotifyUpdate(void * parameters)
             Serial.println(millis()-t);
             updateTimeout = millis();
         }
+
+        // Download new image.
         if (spotify.getUpdateImage())
         {
             // Serial.println("Changing Image!");
@@ -211,6 +322,11 @@ void setup()
 
     pinMode(RotaryA, INPUT_PULLUP);
     pinMode(RotaryB, INPUT_PULLUP);
+    pinMode(playPauseSwitch, INPUT_PULLUP);
+    pinMode(nextSwitch, INPUT_PULLUP);
+    pinMode(prevSwitch, INPUT_PULLUP);
+    pinMode(shuffleSwitch, INPUT_PULLUP);
+    pinMode(likeSwitch, INPUT_PULLUP);
 
     display.init();
     display.bootPOSTInfo("Spotify Knob MK2", 0);
@@ -227,10 +343,6 @@ void setup()
     
     display.bootPOSTInfo("Fetching Spotify Auth", 125);
     acquireAccessToken();
-
-    // requests.begin("https://api.spotify.com/v1/me/player/play");
-    // requests.addAuthHeader(spotify.getAccessToken());
-    // int reply = requests.send("PUT", "");
     
     display.bootPOSTInfo("Retrieving from API", 190);
     refreshPlaybackInfo();
@@ -254,6 +366,11 @@ void setup()
     // requests.getFile(spotify.getImageURL(), "/cover.jpg");
     // display.showImage();
 
+    attachInterrupt(playPauseSwitch, switches, FALLING);
+    attachInterrupt(nextSwitch, switches, FALLING);
+    attachInterrupt(prevSwitch, switches, FALLING);
+    attachInterrupt(shuffleSwitch, switches, FALLING);
+    attachInterrupt(likeSwitch, switches, FALLING);
     xTaskCreatePinnedToCore(encoder, "Rotary Encoder", 1000, NULL, 1, NULL, 0);
     xTaskCreatePinnedToCore(displayUpdate, "Display Update Loop", 50000, NULL, 2, NULL, 0);
     xTaskCreatePinnedToCore(spotifyUpdate, "Spotify Refresh Loop", 7000, NULL, 2, NULL, 1);

@@ -30,6 +30,8 @@ public:
 
     char* getResponse();
 
+    String getResponseString();
+
     bool getFile(String url, const char *filename);
 
 };

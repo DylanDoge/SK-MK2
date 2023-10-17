@@ -66,6 +66,11 @@ char* Spotify::getItemID()
     return this->item_ID;
 }
 
+char* Spotify::getLinkedID()
+{
+    return this->linked_track_ID;
+}
+
 unsigned short Spotify::getRefreshTime()
 {
     return this->refreshTime;
@@ -74,6 +79,11 @@ unsigned short Spotify::getRefreshTime()
 bool Spotify::getIsPlaying()
 {
     return this->is_playing;
+}
+
+bool Spotify::getShuffleState()
+{
+    return this->shuffle_state;
 }
 
 bool Spotify::getUpdateTrack()
@@ -109,6 +119,16 @@ void Spotify::toggleUpdateTrack()
 void Spotify::toggleUpdateImage()
 {
     this->updateImage = !this->updateImage;
+}
+
+void Spotify::toggleIsPlaying()
+{
+    this->is_playing = !this->is_playing;
+}
+
+void Spotify::toggleShuffleState()
+{
+    this->shuffle_state = !this->shuffle_state;
 }
 
 void Spotify::setVolume(short newVolume)
@@ -217,7 +237,7 @@ void Spotify::deserializeAccessToken(char *data)
 
 void Spotify::deserializePlayerState(char *data)
 {
-    StaticJsonDocument<272> filter;
+    StaticJsonDocument<304> filter;
     filter["device"] = true;
 
     JsonObject filter_item = filter.createNestedObject("item");
@@ -228,6 +248,7 @@ void Spotify::deserializePlayerState(char *data)
     filter_item["name"] = true;
     filter_item["duration_ms"] = true;
     filter_item["is_local"] = true;
+    filter_item["linked_from"]["id"] = true;
     filter_item["show"]["name"] = true;
     filter["shuffle_state"] = true;
     filter["progress_ms"] = true;
@@ -321,6 +342,10 @@ void Spotify::deserializePlayerState(char *data)
 
         this->duration_ms = item["duration_ms"]; // 214986
         this->is_local = item["is_local"]; // false
+        
+        const char *emptyStr = "";
+        const char *linkedID = (!item["linked_from"]["id"].isNull()) ? item["linked_from"]["id"] : emptyStr;
+        memcpy(this->linked_track_ID, linkedID, strlen(linkedID)+1);
         
         const char *name = item["name"]; // "Le Cygne"
         memcpy(this->item_name, name, strlen(name)+1);

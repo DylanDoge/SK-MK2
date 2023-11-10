@@ -86,6 +86,11 @@ bool Spotify::getShuffleState()
     return this->shuffle_state;
 }
 
+bool Spotify::getShuffleStateChange()
+{
+    return this->shuffleStateChanged;
+}
+
 bool Spotify::getUpdateTrack()
 {
     return this->updateTrack;
@@ -109,6 +114,11 @@ void Spotify::toggleClientVolumeChanged()
 void Spotify::enableClientVolumeChanged()
 {
     this->clientVolumeChanged = true;
+}
+
+void Spotify::enableShuffleChanged()
+{
+    this->shuffleStateChanged = true;
 }
 
 void Spotify::toggleUpdateTrack()
@@ -300,6 +310,7 @@ void Spotify::deserializePlayerState(char *data)
         this->volumeProcent = device["volume_percent"]; // 100
     }
 
+    this->shuffleStateChanged = (this->shuffle_state != doc["shuffle_state"]) ? 1 : 0;
     this->shuffle_state = doc["shuffle_state"]; // false
     this->rewinedTrack = (doc["progress_ms"] < this->progress_ms) ? 1 : 0;
     this->progress_ms = doc["progress_ms"]; // 22032

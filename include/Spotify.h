@@ -56,6 +56,7 @@ private:
     bool updateTrack;
     bool rewinedTrack;
     bool clientVolumeChanged = false;
+    bool shuffleStateChanged = false;
 
     // GET player info refreshTime
     unsigned short refreshTime = 1500;
@@ -96,6 +97,8 @@ public:
 
     bool getShuffleState();
 
+    bool getShuffleStateChange();
+
     bool getUpdateTrack();
 
     bool getUpdateImage();
@@ -114,6 +117,8 @@ public:
     void toggleClientVolumeChanged();
 
     void enableClientVolumeChanged();
+
+    void enableShuffleChanged();
 
     void toggleUpdateTrack();
 

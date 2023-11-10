@@ -1,14 +1,24 @@
 #ifndef DISPLAY_H
 #define DISPLAY_H
+#define DISABLE_ALL_LIBRARY_WARNINGS
 
 #include <Arduino.h>
 #include <TFT_eSPI.h>       // Hardware-specific library
-#include <TJpg_Decoder.h>   
+#include <TJpg_Decoder.h>
+#include "Sprites.h" 
+
+// #define TFT_BLACK 0xf7de
+// #define TFT_WHITE 0x0000
 
 class Display
 {
 private:
     TFT_eSPI tft = TFT_eSPI();         // Invoke custom library
+    short previousVolume = 101;
+    const float volumeStep = 16.6666;  // rounded 100/6. Steps between 1 and 7
+    const short volKnobCenterPosX = 309;
+    const short volKnobCenterPosY = 331;
+    const int volKnobArrowColor = 0xF800;
 public:
     Display() {}
 
@@ -30,7 +40,7 @@ public:
 
     void showTitleName(const char* title, const String artistsName);
 
-    void showImage();
+    void showImage(String path, const unsigned int x, const unsigned int y);
 
     // DRY! FIX! both showTime should call one function.
     void showProgressTime(const short progressMin, const short progressSec);
@@ -39,8 +49,16 @@ public:
 
     void showProgressBar(const long progressMs, const long durationMs);
 
+    void showProgressBarBackground();
+
     void showImageLoading();
 
     void showVolume(const unsigned short volume);
+
+    void drawVolumeIconCircle();
+
+    void showShuffle(bool);
+
+    void square();
 };
 #endif

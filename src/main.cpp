@@ -13,14 +13,13 @@
 #define prevSwitch 41
 #define shuffleSwitch 42
 #define likeSwitch 1
+#define tabSwitch 38
 
 Spotify spotify(clientId, clientSecret, refreshToken);
 Wireless wireless(ssid, password);
 Requests requests(digicert_root_ca);
 Display display(true);
 Filesystem filesystem(true);
-
-bool imgLoaded;
 
 void acquireAccessToken()
 {
@@ -71,8 +70,11 @@ void encoder(void * parameters)
 {
     bool lastPinA = digitalRead(RotaryA);
     bool lastPinB = digitalRead(RotaryB);
+    // Spotify volume
     unsigned short i = spotify.getVolumeProcent();
     // unsigned long volumePollingTimeout;
+    // Library Index
+    short j = 0;
     for (;;)
     {
         // Optional repeatedly polling volume.
@@ -86,35 +88,76 @@ void encoder(void * parameters)
         bool pinA = digitalRead(RotaryA);
         bool pinB = digitalRead(RotaryB);
 
-        if (lastPinA == 0 && lastPinB == 0)
+        if (display.currentTab == 1)
         {
-            if (pinA == 1 && pinB == 0 && i+1 <= 100)
+            if (lastPinA == 0 && lastPinB == 0)
             {
-                i++;
-                spotify.enableClientVolumeChanged();
-                spotify.setVolume(i);
+                if (pinA == 1 && pinB == 0 && i+1 <= 100)
+                {
+                    i++;
+                    spotify.enableClientVolumeChanged();
+                    spotify.setVolume(i);
+                }
+                if (pinA == 0 && pinB == 1 && i-1 >= 0)
+                {
+                    i--;
+                    spotify.enableClientVolumeChanged();
+                    spotify.setVolume(i);
+                }
             }
-            if (pinA == 0 && pinB == 1 && i-1 >= 0)
+            
+            if (lastPinA == 1 && lastPinB == 1)
             {
-                i--;
-                spotify.enableClientVolumeChanged();
-                spotify.setVolume(i);
+                if (pinA == 1 && pinB == 0 && i-1 >= 0)
+                {
+                    i--;
+                    spotify.enableClientVolumeChanged();
+                    spotify.setVolume(i);
+                }
+                if (pinA == 0 && pinB == 1 && i+1 <= 100)
+                {
+                    i++;
+                    spotify.enableClientVolumeChanged();
+                    spotify.setVolume(i);
+                }
             }
         }
-        
-        if (lastPinA == 1 && lastPinB == 1)
+        else if (display.currentTab == 2)
         {
-            if (pinA == 1 && pinB == 0 && i-1 >= 0)
+            if (lastPinA == 0 && lastPinB == 0)
             {
-                i--;
-                spotify.enableClientVolumeChanged();
-                spotify.setVolume(i);
+                if (pinA == 1 && pinB == 0 && j+1 <= 10)
+                {
+                    j++;
+                    spotify.librarySelectedTrackChanged = true;
+                    spotify.librarySelectedTrack = j;
+                }
+                if (pinA == 0 && pinB == 1 && j-1 >= -1)
+                {
+                    j--;
+                    spotify.librarySelectedTrackChanged = true;
+                    spotify.librarySelectedTrack = j;
+                }
             }
-            if (pinA == 0 && pinB == 1 && i+1 <= 100)
+            
+            if (lastPinA == 1 && lastPinB == 1)
             {
-                i++;
-                spotify.enableClientVolumeChanged();
-                spotify.setVolume(i);
+                if (pinA == 1 && pinB == 0 && j-1 >= -1)
+                {
+                    j--;
+                    spotify.librarySelectedTrackChanged = true;
+                    spotify.librarySelectedTrack = j;
+                }
+                if (pinA == 0 && pinB == 1 && j+1 <= 10)
+                {
+                    j++;
+                    spotify.librarySelectedTrackChanged = true;
+                    spotify.librarySelectedTrack = j;
+                }
+            }
+            if (j >= 10 || j < 0)
+            {
+                j = 0;
             }
         }
         lastPinA = pinA;
@@ -125,8 +168,19 @@ void encoder(void * parameters)
 
 void switches()
 {
+    if (digitalRead(tabSwitch) == LOW && millis()-spotify.lastTabPress > 1000)
+    {
+        spotify.lastTabPress = millis();
+        display.swapTab();
+        return;
+    }
     if (digitalRead(playPauseSwitch) == LOW)
     {
+        if (display.currentTab == 2)
+        {
+            spotify.libraryPlayCurrent = true;
+            return;
+        }
         spotify.togglePlaying = true;
     }
     if (digitalRead(nextSwitch) == LOW)
@@ -183,10 +237,33 @@ void displayUpdate(void * parameters)
             display.showDurationTime(spotify.getDurationMin(), spotify.getDurationSec());
             spotify.toggleUpdateTrack();
         }
-        if (imgLoaded)
+        if (spotify.libraryLoading)
+        {
+            display.loadingLibrary();
+            spotify.libraryLoading = false;
+        }
+        if (filesystem.imgLoaded && display.currentTab == 1)
         {
             display.showImage("/cover.jpg", 0, 52);
-            imgLoaded = false;
+            filesystem.imgLoaded = false;
+        }
+        if (spotify.libraryLoaded && display.currentTab == 2)
+        {
+            display.showLibrary(spotify.trackTitles, spotify.trackArtists, spotify.currentLibraryPage, spotify.totalTracks, spotify.libraryTotalPages);
+            spotify.libraryLoaded = false;
+        }
+        if (display.updateToSelectedTrack && display.currentTab == 2)
+        {
+            display.showSelectedTrack(spotify.librarySelectedTrack);
+            display.updateToSelectedTrack = false;
+        }
+        if (display.updateTabs)
+        {
+            display.clearVolumeAndTabs();
+            display.showTabs();
+            display.drawVolumeIconCircle();
+            display.showVolume(spotify.getVolumeProcent());
+            display.updateTabs = false;
         }
         if (spotify.getClientVolumeChanged())
         {
@@ -279,6 +356,36 @@ void spotifyUpdate(void * parameters)
             spotify.clientActionChange = false;
         }
 
+        // Queue current track selected in Library.
+        if (spotify.libraryPlayCurrent)
+        {
+            String spotifyQueueHref = "https://api.spotify.com/v1/me/player/queue?uri=";
+            spotifyQueueHref += spotify.trackURIs[spotify.librarySelectedTrack];
+            requests.begin(spotifyQueueHref);
+            requests.addAuthHeader(spotify.getAccessToken());
+            requests.send("POST", "");
+            spotify.libraryPlayCurrent = false;
+        }
+
+        // Fetch Spotify Library.
+        if (spotify.libraryFetch)
+        {
+            spotify.libraryLoading = true;
+            String spotifySavedHref = "https://api.spotify.com/v1/me/tracks?market=SE&limit=10&offset=";
+            spotifySavedHref += (spotify.currentLibraryPage-1)*10;
+            requests.begin(spotifySavedHref);
+            requests.addAuthHeader(spotify.getAccessToken());
+            requests.send("GET", "");
+            spotify.deserializeSavedTracks(requests.getResponse());
+            requests.clearResponse();
+            spotify.libraryFetch = false;
+            spotify.libraryLoading = false;
+            spotify.libraryLoaded = true;
+            display.updateTabs = true;
+
+            display.updateToSelectedTrack = true;
+        }
+
         // Send volume if changed by encoder.
         if ((millis()-encoderTimeout) >= 700 && spotify.getClientVolumeChanged())
         {
@@ -306,13 +413,61 @@ void spotifyUpdate(void * parameters)
             // Serial.println("Changing Image!");
             filesystem.removeCurrentImgFile();
             // int t = millis();
+            filesystem.imgDownloaded = false;
             requests.getFile(spotify.getImageURL(), "/cover.jpg");
+            filesystem.imgDownloaded = true;
             // Serial.println(millis()-t);
             spotify.toggleUpdateImage();
-            imgLoaded = true;
+            filesystem.imgLoaded = true;
         }
         vTaskDelay(100 / portTICK_PERIOD_MS);
 
+    }
+}
+
+void libraryUpdate(void * parameters)
+{
+    for (;;)
+    {
+        // Polling mutex to tabSwitch. 
+        if (display.tabChanged)
+        {
+            Serial.println(display.currentTab);
+            if (display.currentTab == 1)
+            {
+                spotify.libraryLoading = true;
+                display.updateTabs = true;
+                if (filesystem.imgDownloaded)
+                {
+                    filesystem.imgLoaded = true;
+                }
+            }
+            else if (display.currentTab == 2)
+            {
+                spotify.libraryFetch = true;
+                display.updateTabs = true;
+            }
+            display.tabChanged = false;
+        }
+        // Polling mutex to change positional index.
+        if (spotify.librarySelectedTrackChanged)
+        {
+            if (spotify.librarySelectedTrack >= 10 && spotify.currentLibraryPage+1 <= spotify.libraryTotalPages)
+            {
+                spotify.currentLibraryPage++;
+                spotify.libraryFetch = true;
+                spotify.librarySelectedTrack = 0;
+            }
+            else if (spotify.librarySelectedTrack < 0 && spotify.currentLibraryPage-1 > 0)
+            {
+                spotify.currentLibraryPage--;
+                spotify.libraryFetch = true;
+                spotify.librarySelectedTrack = 0;
+            }
+            display.updateToSelectedTrack = true;
+            spotify.librarySelectedTrackChanged = false;
+        }
+        vTaskDelay(80 / portTICK_PERIOD_MS);
     }
 }
 
@@ -321,8 +476,8 @@ void setup()
     Serial.begin(115200);
     Serial.println("Spotify Knob MK2 ESP-32 by DylanDoge");
 
-    const unsigned int pinCount = 7;
-    const unsigned int pins[pinCount] = {RotaryA, RotaryB, playPauseSwitch, nextSwitch, prevSwitch, shuffleSwitch, likeSwitch};
+    const unsigned int pinCount = 8;
+    const unsigned int pins[pinCount] = {RotaryA, RotaryB, playPauseSwitch, nextSwitch, prevSwitch, shuffleSwitch, likeSwitch, tabSwitch};
     for (int i = 0; i < pinCount; i++)
     {
         pinMode(pins[i], INPUT_PULLUP);
@@ -344,13 +499,14 @@ void setup()
     
     display.bootPOSTInfo("Fetching Spotify Auth", 125);
     acquireAccessToken();
-    
+
     display.bootPOSTInfo("Retrieving from API", 190);
     refreshPlaybackInfo();
 
     display.bootPOSTInfo("Starting...", 250);
     // delay(250);
     display.clear();
+    display.showTabs();    
     display.showProgressBarBackground();
     display.showProgressBar(spotify.getProgressMs(), spotify.getDurationMs());
     display.showPlayPauseIcon(spotify.getIsPlaying());
@@ -362,13 +518,12 @@ void setup()
     {
         display.showImageLoading();
     }
-    // Slower due to large font
     display.showTitleName(spotify.getItemTitle(), spotify.getArtistsNames());
-    // display.square();
     
     xTaskCreatePinnedToCore(encoder, "Rotary Encoder", 1000, NULL, 1, NULL, 0);
     xTaskCreatePinnedToCore(displayUpdate, "Display Update Loop", 110000, NULL, 2, NULL, 0);
-    xTaskCreatePinnedToCore(spotifyUpdate, "Spotify Refresh Loop", 7000, NULL, 2, NULL, 1);
+    xTaskCreatePinnedToCore(spotifyUpdate, "Spotify Player Refresh Loop", 7000, NULL, 2, NULL, 1);
+    xTaskCreatePinnedToCore(libraryUpdate, "Spotify Library Refresh Loop", 5000, NULL, 2, NULL, 0);
 }
 
 

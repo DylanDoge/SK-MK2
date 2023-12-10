@@ -4,11 +4,12 @@
 #include <Arduino.h>
 #include <base64.h>
 #include <ArduinoJson.h>
-// #include "Display.h"
+#include "Display.h"
 
 class Spotify
 {
 private:
+    Display display = Display();
     // Class attributes
     bool deviceActive;
     bool supportsVolume;
@@ -68,10 +69,22 @@ public:
     bool toggleShuffle;
     bool beginLike;
 
+    String trackTitles[11] = {};
+    String trackArtists[11] = {};
+    String trackURIs[11] = {};
+    unsigned int totalTracks = 0;
+    unsigned int currentLibraryPage = 3;
+    int librarySelectedTrack = 0;
+    unsigned int libraryTotalPages = 0;
+    bool librarySelectedTrackChanged;
+    bool libraryPlayCurrent;
+    bool libraryFetch;
+    bool libraryLoading;
+    bool libraryLoaded;
+    unsigned long lastTabPress;
+
     Spotify() {}
     Spotify(const char ID[33], const char secret[33], const char refresh[132]);
-    
-    void printTest();
 
     void encodeClientAuth();
 
@@ -153,6 +166,8 @@ public:
     void deserializeAccessToken(char *data);
 
     void deserializePlayerState(char *data);
+
+    void deserializeSavedTracks(char *data);
 
     void setMsToMinuteAndSec();
 

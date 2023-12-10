@@ -270,4 +270,98 @@ void Display::square()
     tft.fillRect(0, 0, 32, 32, TFT_WHITE);
 }
 
+void Display::showTabs()
+{
+    uint8_t squareLength = 15;
+    uint8_t topTextPadding = 4;
+    uint8_t leftTextPadding = 5;
+    tft.fillRect(tft.width()-squareLength, 0, squareLength, squareLength*2+1, TFT_WHITE);
+    tft.setTextSize(1);
+    tft.setCursor(tft.width()-squareLength+leftTextPadding, topTextPadding);
+    switch (currentTab)
+    {
+        // Tab 1: Player
+        case 1:
+            tft.fillRect(tft.width()-squareLength, 0, squareLength, squareLength, 0x5aab);
+            tft.setTextColor(TFT_WHITE);
+            tft.print("P");
+            tft.setTextColor(TFT_BLACK);
+            break;
+        // Tab 2: Library
+        case 2:
+            tft.fillRect(tft.width()-squareLength, squareLength+1, squareLength, squareLength, 0x5aab);
+            tft.setTextColor(TFT_BLACK);
+            tft.print("P");
+            tft.setTextColor(TFT_WHITE);
+            break;
+        default:
+            break;
+    }
+    // Print last tab
+    tft.setCursor(tft.width()-squareLength+leftTextPadding, topTextPadding+1+squareLength);
+    tft.print("L");
+    // Reset text Color
+    tft.setTextColor(TFT_WHITE);
+}
 
+void Display::swapTab()
+{
+    if (!tabChanged)
+    {
+        tabChanged = true;
+        if (currentTab < tabsCount)
+        {
+            currentTab++;
+            return;
+        }
+        currentTab = 1;
+    }
+}
+
+void Display::showLibrary(String *tracksTitles, String *trackArtists, unsigned int currentPage, unsigned int totalTracks, unsigned int totalPages)
+{
+    tft.fillRect(0, 0, 300, 52+300, TFT_BLACK);
+    tft.setTextSize(1);
+    for (int i = 0; i < 10; i++)
+    {
+        tft.setTextColor(TFT_WHITE);
+        tft.setCursor(5, (i*30)+16);
+        tft.print(tracksTitles[i]);
+        tft.setTextColor(0xb596);
+        tft.setCursor(5, (i*30)+26);
+        tft.print(trackArtists[i]);
+        
+    }
+    tft.setTextColor(TFT_WHITE);
+    tft.setCursor(100, 22+300);
+    tft.print("page: ");
+    tft.print(currentPage);
+    tft.print("/");
+    tft.print(totalPages);
+}
+
+void Display::loadingLibrary()
+{
+    tft.fillRect(0, 0, 300, 52+300, TFT_BLACK);
+    tft.setTextSize(1);
+    tft.setTextColor(TFT_WHITE);
+    tft.setCursor(90, 34+150);
+    tft.print("Loading...");
+}
+
+void Display::clearVolumeAndTabs()
+{
+    tft.fillRect(300, 0, 20, 52+300, TFT_BLACK);
+}
+
+void Display::showSelectedTrack(const unsigned int selectedIndex)
+{
+    for (int i = -1; i < 10; i++)
+    {
+        tft.drawRect(0, (30*i)+10, 300, 30, TFT_BLACK);
+    }
+    if (selectedIndex <= 9 && selectedIndex >= 0)
+    {
+        tft.drawRect(0, (30*selectedIndex)+10, 300, 30, TFT_WHITE);
+    }
+}

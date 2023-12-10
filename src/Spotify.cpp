@@ -10,21 +10,6 @@ Spotify::Spotify(const char ID[33], const char secret[33], const char refresh[13
     encodeClientAuth();
 }
 
-void Spotify::printTest()
-{
-    // Serial.println(clientID);
-    // Serial.println(clientSecret);
-    // Serial.println(clientRefresh);
-    Serial.println(this->deviceName);
-    Serial.println(this->deviceID);
-    Serial.println(this->image_url);
-    Serial.println(this->item_name);
-    Serial.println(this->item_ID);
-    Serial.println(this->is_playing);
-    Serial.println(this->volumeProcent);
-    Serial.println(this->artists_name);
-}
-
 void Spotify::encodeClientAuth()
 {
     const String clientCredAdded = String(clientID) + ":" + String(clientSecret);
@@ -389,6 +374,44 @@ void Spotify::deserializePlayerState(char *data)
         this->is_local = item["is_local"]; // false
     }
     
+    doc.clear();
+}
+
+void Spotify::deserializeSavedTracks(char *data)
+{
+    StaticJsonDocument<144> filter;
+    filter["total"] = true;
+    JsonObject filter_items_0_track = filter["items"][0].createNestedObject("track");
+    filter_items_0_track["artists"][0]["name"] = true;
+    filter_items_0_track["name"] = true;
+    filter_items_0_track["uri"] = true;
+
+    StaticJsonDocument<1536> doc;
+    DeserializationError error = deserializeJson(doc, data, DeserializationOption::Filter(filter));
+
+    if (error) {
+    Serial.print("deserializeJson() failed: ");
+    Serial.println(error.c_str());
+    return;
+    }
+
+    JsonArray items = doc["items"];
+    totalTracks = doc["total"];
+    libraryTotalPages = floor(totalTracks/10);
+    if (totalTracks > libraryTotalPages*10)
+    {
+        libraryTotalPages++;
+    }
+    for (int i = 0; i < 10; i++)
+    {
+        JsonObject items_track = items[i]["track"];
+        const char *track_name = items_track["name"];
+        const char *artist_name = items_track["artists"][0]["name"];
+        const char *track_uri = items_track["uri"];
+        trackTitles[i] = String(track_name);
+        trackArtists[i] = String(artist_name);
+        trackURIs[i] = String(track_uri);
+    }
     doc.clear();
 }
 

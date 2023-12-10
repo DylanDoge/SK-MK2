@@ -19,7 +19,13 @@ private:
     const short volKnobCenterPosX = 309;
     const short volKnobCenterPosY = 331;
     const int volKnobArrowColor = 0xF800;
+    unsigned short tabsCount = 2;
 public:
+    unsigned short currentTab = 1;
+    bool tabChanged;
+    bool updateTabs;
+    bool updateToSelectedTrack;
+
     Display() {}
 
     Display(bool swapBytes);
@@ -60,5 +66,17 @@ public:
     void showShuffle(bool);
 
     void square();
+
+    void showTabs();
+
+    void swapTab();
+
+    void showLibrary(String *tracksTitles, String *trackArtists, unsigned int currentPage, unsigned int totalTracks, unsigned int totalPages);
+
+    void loadingLibrary();
+
+    void clearVolumeAndTabs();
+
+    void showSelectedTrack(const unsigned int selectedIndex);
 };
 #endif

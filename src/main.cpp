@@ -21,18 +21,24 @@ Requests requests(digicert_root_ca);
 Display display(true);
 Filesystem filesystem(true);
 
-void acquireAccessToken()
+bool acquireAccessToken()
 {
     int retry = 0;
+    short response;
     do {
         requests.begin("https://accounts.spotify.com/api/token");
         requests.addFetchAuthHeader(spotify.getClientAuthEnc());
-        short response = requests.send("POST", "grant_type=refresh_token&refresh_token=" + String(spotify.getRefreshToken()));
+        response = requests.send("POST", "grant_type=refresh_token&refresh_token=" + String(spotify.getRefreshToken()));
         if (spotify.handleAccessTokenResponse(response)) {break;}
         retry++;
     }
-    while (retry < 2);
-    spotify.deserializeAccessToken(requests.getResponse());
+    while (retry < 3);
+    if (response == 200)
+    {
+        spotify.deserializeAccessToken(requests.getResponse());
+        return true;
+    }
+    return false;
 }
 
 void refreshPlaybackInfo()
@@ -218,7 +224,7 @@ void displayUpdate(void * parameters)
                 spotify.toggleRewindedTrack();
             }
             spotify.setMsToMinuteAndSec();
-            display.showPlayPauseIcon(spotify.getIsPlaying());
+            if (spotify.is_playingChanged) display.showPlayPauseIcon(spotify.getIsPlaying());
             if ((spotify.getProgressMs() + refreshTime) < spotify.getDurationMs() && spotify.getIsPlaying())
             {
                 spotify.addTimeToProgressMs(refreshTime);
@@ -235,6 +241,8 @@ void displayUpdate(void * parameters)
             display.showProgressBarBackground();
             display.showProgressTime(spotify.getProgressMin(), spotify.getProgressSec());
             display.showDurationTime(spotify.getDurationMin(), spotify.getDurationSec());
+            display.showVolume(spotify.getVolumeProcent());
+            display.drawVolumeIconCircle();
             spotify.toggleUpdateTrack();
         }
         if (spotify.libraryLoading)
@@ -244,7 +252,7 @@ void displayUpdate(void * parameters)
         }
         if (filesystem.imgLoaded && display.currentTab == 1)
         {
-            display.showImage("/cover.jpg", 0, 52);
+            display.showImage("/cover.jpg", 0, 45);
             filesystem.imgLoaded = false;
         }
         if (spotify.libraryLoaded && display.currentTab == 2)
@@ -263,6 +271,7 @@ void displayUpdate(void * parameters)
             display.showTabs();
             display.drawVolumeIconCircle();
             display.showVolume(spotify.getVolumeProcent());
+            display.drawVolumeIconCircle();
             display.updateTabs = false;
         }
         if (spotify.getClientVolumeChanged())
@@ -420,7 +429,7 @@ void spotifyUpdate(void * parameters)
             spotify.toggleUpdateImage();
             filesystem.imgLoaded = true;
         }
-        vTaskDelay(100 / portTICK_PERIOD_MS);
+        vTaskDelay(50 / portTICK_PERIOD_MS);
 
     }
 }
@@ -432,7 +441,6 @@ void libraryUpdate(void * parameters)
         // Polling mutex to tabSwitch. 
         if (display.tabChanged)
         {
-            Serial.println(display.currentTab);
             if (display.currentTab == 1)
             {
                 spotify.libraryLoading = true;
@@ -450,7 +458,7 @@ void libraryUpdate(void * parameters)
             display.tabChanged = false;
         }
         // Polling mutex to change positional index.
-        if (spotify.librarySelectedTrackChanged)
+        if (spotify.librarySelectedTrackChanged && !spotify.libraryLoading)
         {
             if (spotify.librarySelectedTrack >= 10 && spotify.currentLibraryPage+1 <= spotify.libraryTotalPages)
             {
@@ -467,7 +475,7 @@ void libraryUpdate(void * parameters)
             display.updateToSelectedTrack = true;
             spotify.librarySelectedTrackChanged = false;
         }
-        vTaskDelay(80 / portTICK_PERIOD_MS);
+        vTaskDelay(20 / portTICK_PERIOD_MS);
     }
 }
 
@@ -493,12 +501,21 @@ void setup()
     display.bootPOSTInfo(filesystem.init(), 0);
     filesystem.status();
     
-    display.bootPOSTInfo("Connecting WiFi...", 75);
+    display.bootPOSTInfo("Configuring WiFi...", 60);
     wireless.settings();
-    wireless.connect();
+    display.bootPOSTInfo("Connecting WiFi...", 75);
+    if (!wireless.connect())
+    {
+        display.bootPOSTInfo("Failed To Connect WiFi", 75);
+        while (1) yield();
+    }
     
     display.bootPOSTInfo("Fetching Spotify Auth", 125);
-    acquireAccessToken();
+    if (!acquireAccessToken() || requests.getResponseString() == "")
+    {
+        display.bootPOSTInfo("Spotify Auth. Failed", 85);
+        while (1) yield();
+    }
 
     display.bootPOSTInfo("Retrieving from API", 190);
     refreshPlaybackInfo();
@@ -519,11 +536,12 @@ void setup()
         display.showImageLoading();
     }
     display.showTitleName(spotify.getItemTitle(), spotify.getArtistsNames());
+    display.showCurrentVersion();
     
     xTaskCreatePinnedToCore(encoder, "Rotary Encoder", 1000, NULL, 1, NULL, 0);
     xTaskCreatePinnedToCore(displayUpdate, "Display Update Loop", 110000, NULL, 2, NULL, 0);
     xTaskCreatePinnedToCore(spotifyUpdate, "Spotify Player Refresh Loop", 7000, NULL, 2, NULL, 1);
-    xTaskCreatePinnedToCore(libraryUpdate, "Spotify Library Refresh Loop", 5000, NULL, 2, NULL, 0);
+    xTaskCreatePinnedToCore(libraryUpdate, "Spotify Library Refresh Loop", 3000, NULL, 2, NULL, 0);
 }
 
 

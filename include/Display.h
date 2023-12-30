@@ -20,6 +20,25 @@ private:
     const short volKnobCenterPosY = 331;
     const int volKnobArrowColor = 0xF800;
     unsigned short tabsCount = 2;
+    bool BMPArray[16][17] = {
+        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0},
+        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0},
+        {1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0},
+        {0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1},
+        {0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1},
+        {0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0},
+        {0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0},
+        {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0},
+        {0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+        {0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0},
+        {0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0},
+        {0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0},
+        {0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1},
+        {1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0},
+        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0},
+        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0}
+    };
+    short lastSelectedIndex = 0;
 public:
     unsigned short currentTab = 1;
     bool tabChanged;
@@ -48,7 +67,6 @@ public:
 
     void showImage(String path, const unsigned int x, const unsigned int y);
 
-    // DRY! FIX! both showTime should call one function.
     void showProgressTime(const short progressMin, const short progressSec);
 
     void showDurationTime(const long durationMin, const long durationSec);
@@ -78,5 +96,7 @@ public:
     void clearVolumeAndTabs();
 
     void showSelectedTrack(const unsigned int selectedIndex);
+
+    void showCurrentVersion();
 };
 #endif

@@ -6,20 +6,26 @@ Wireless::Wireless(const char ssid[65], const char password[65])
     memcpy(this->PSK, password, strlen(password)+1);
 }
 
-void Wireless::connect()
+bool Wireless::connect()
 {
-    if (WiFi.status() == WL_CONNECTED) {return;}
+    if (WiFi.status() == WL_CONNECTED) {return true;}
 
     WiFi.begin(SSID, PSK);
     Serial.print("Connecting to WiFi ..");
+    unsigned long connectTimeStart = millis();
     while (WiFi.status() != WL_CONNECTED) 
     {
         Serial.print(".");
+        if (millis()-connectTimeStart > 30000)
+        {
+            return false;
+        }
         delay(connectAttemptPeriod);
     }
 
     Serial.print("\nWiFi Connected! Local IP: ");
     Serial.println(WiFi.localIP());
+    return true;
 }
 
 void Wireless::settings()

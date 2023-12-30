@@ -16,7 +16,7 @@ public:
     
     Wireless(const char ssid[65], const char password[65]);
 
-    void connect();
+    bool connect();
 
     void settings();
 };

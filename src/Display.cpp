@@ -10,6 +10,7 @@ void Display::init()
     tft.begin();
     tft.fillScreen(TFT_BLACK);
     tft.setTextWrap(false);
+    // tft.setRotation(2);
 }
 
 int Display::getHeight()
@@ -82,7 +83,6 @@ void Display::showImage(String path, const unsigned int x, const unsigned int y)
     TJpgDec.drawFsJpg(x, y, path, LittleFS);
 }
 
-// DRY! FIX! both showTime should call one function.
 void Display::showProgressTime(const short progressMin, const short progressSec)
 {
     const int tftWidth = tft.width();
@@ -108,7 +108,7 @@ void Display::showProgressTime(const short progressMin, const short progressSec)
 void Display::showDurationTime(const long durationMin, const long durationSec)
 {
     const int tftWidth = tft.width();
-    tft.fillRect(256, 368, 26, 7, TFT_BLACK);
+    tft.fillRect(256, 368, 28, 7, TFT_BLACK);
     tft.setCursor(261, 368);
     tft.setTextColor(TFT_WHITE);
     tft.setTextSize(1);
@@ -212,9 +212,6 @@ void Display::showVolume(const unsigned short volume)
     }
     
     this->previousVolume = volume;
-
-    // Previous day notes
-    // Play Pause refreshes when no change happends
 }
 
 void Display::drawVolumeIconCircle()
@@ -231,31 +228,13 @@ void Display::showShuffle(bool state)
     const unsigned short width = 17;
     const unsigned short height = 16;
 
-    bool BMPArray[16][17] = {
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0},
-        {1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0},
-        {0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1},
-        {0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1},
-        {0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0},
-        {0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0},
-        {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0},
-        {0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0},
-        {0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0},
-        {0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0},
-        {0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1},
-        {1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0}
-    };
     for (int row = 0; row < height; row++)
     {
         for (int collumn = 0; collumn < width; collumn++)
         {
             if (BMPArray[row][collumn] && state)
             {
-                    tft.drawPixel(startXPos+collumn, startYPos+row, TFT_WHITE);
+                tft.drawPixel(startXPos+collumn, startYPos+row, TFT_WHITE);
             }
             else if (BMPArray[row][collumn])
             {
@@ -330,7 +309,6 @@ void Display::showLibrary(String *tracksTitles, String *trackArtists, unsigned i
         tft.setTextColor(0xb596);
         tft.setCursor(5, (i*30)+26);
         tft.print(trackArtists[i]);
-        
     }
     tft.setTextColor(TFT_WHITE);
     tft.setCursor(100, 22+300);
@@ -345,7 +323,7 @@ void Display::loadingLibrary()
     tft.fillRect(0, 0, 300, 52+300, TFT_BLACK);
     tft.setTextSize(1);
     tft.setTextColor(TFT_WHITE);
-    tft.setCursor(90, 34+150);
+    tft.setCursor(90, 30+150);
     tft.print("Loading...");
 }
 
@@ -356,12 +334,22 @@ void Display::clearVolumeAndTabs()
 
 void Display::showSelectedTrack(const unsigned int selectedIndex)
 {
-    for (int i = -1; i < 10; i++)
-    {
-        tft.drawRect(0, (30*i)+10, 300, 30, TFT_BLACK);
-    }
+    // for (int i = -1; i < 10; i++)
+    // {
+    // }
+    tft.drawRect(0, (30*this->lastSelectedIndex)+10, 300, 30, TFT_BLACK);
     if (selectedIndex <= 9 && selectedIndex >= 0)
     {
+        this->lastSelectedIndex = selectedIndex;
         tft.drawRect(0, (30*selectedIndex)+10, 300, 30, TFT_WHITE);
     }
+}
+
+void Display::showCurrentVersion()
+{
+    tft.setCursor(0, 470);
+    tft.setTextSize(1);
+    tft.setTextColor(0xef7d);
+    tft.print("Spotify MK2 v2.11b BETA");
+    tft.setTextColor(TFT_WHITE);
 }

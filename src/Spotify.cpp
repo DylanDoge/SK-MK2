@@ -299,6 +299,7 @@ void Spotify::deserializePlayerState(char *data)
     this->shuffle_state = doc["shuffle_state"]; // false
     this->rewinedTrack = (doc["progress_ms"] < this->progress_ms) ? 1 : 0;
     this->progress_ms = doc["progress_ms"]; // 22032
+    this->is_playingChanged = (this->is_playing != doc["is_playing"]) ? 1 : 0;
     this->is_playing = doc["is_playing"]; // true
     
     //EPISODE SWITCH
@@ -415,23 +416,25 @@ void Spotify::deserializeSavedTracks(char *data)
     doc.clear();
 }
 
-// DRY mf! FIX!
 void Spotify::setMsToMinuteAndSec()
 {
     const long durationTime = this->duration_ms;
     const long progressTime = this->progress_ms;
+    convertMillisToMinsAndSec(1, durationTime);
+    convertMillisToMinsAndSec(0, progressTime);
+}
 
-    float secP = durationTime/1000;
+void Spotify::convertMillisToMinsAndSec(const bool durationOrProgress, const long ms)
+{
+    float secP = ms/1000;
     int minutes = secP/60;
     int sec = round(secP-(minutes*60));
-    
-    this->duration_min = minutes;
-    this->duration_sec = sec;
-
-    secP = progressTime/1000;
-    minutes = secP/60;
-    sec = round(secP-(minutes*60));
-    
+    if (durationOrProgress)
+    {
+        this->duration_min = minutes;
+        this->duration_sec = sec;
+        return;
+    }
     this->progress_min = minutes;
     this->progress_sec = sec;
 }

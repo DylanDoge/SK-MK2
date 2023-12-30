@@ -4,12 +4,10 @@
 #include <Arduino.h>
 #include <base64.h>
 #include <ArduinoJson.h>
-#include "Display.h"
 
 class Spotify
 {
 private:
-    Display display = Display();
     // Class attributes
     bool deviceActive;
     bool supportsVolume;
@@ -68,6 +66,7 @@ public:
     bool beginPrev;
     bool toggleShuffle;
     bool beginLike;
+    bool is_playingChanged;
 
     String trackTitles[11] = {};
     String trackArtists[11] = {};
@@ -170,6 +169,8 @@ public:
     void deserializeSavedTracks(char *data);
 
     void setMsToMinuteAndSec();
+
+    void convertMillisToMinsAndSec(bool durationOrProgress, const long ms);
 
     bool getRewinedTrack();
 

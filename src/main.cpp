@@ -78,9 +78,10 @@ void encoder(void * parameters)
     bool lastPinB = digitalRead(RotaryB);
     // Spotify volume
     unsigned short i = spotify.getVolumeProcent();
-    // unsigned long volumePollingTimeout;
     // Library Index
     short j = 0;
+    // unsigned long volumePollingTimeout;
+
     for (;;)
     {
         // Optional repeatedly polling volume.
@@ -94,77 +95,47 @@ void encoder(void * parameters)
         bool pinA = digitalRead(RotaryA);
         bool pinB = digitalRead(RotaryB);
 
-        if (display.currentTab == 1)
+        // Both last pin A & B is 0
+        if (!lastPinA && !lastPinB)
         {
-            if (lastPinA == 0 && lastPinB == 0)
+            if (display.currentTab == 1)
             {
-                if (pinA == 1 && pinB == 0 && i+1 <= 100)
-                {
-                    i++;
-                    spotify.enableClientVolumeChanged();
-                    spotify.setVolume(i);
-                }
-                if (pinA == 0 && pinB == 1 && i-1 >= 0)
-                {
-                    i--;
-                    spotify.enableClientVolumeChanged();
-                    spotify.setVolume(i);
-                }
+                if (pinA == 1 && pinB == 0 && i+1 <= 100) i++;
+                if (pinA == 0 && pinB == 1 && i-1 >= 0) i--;
             }
-            
-            if (lastPinA == 1 && lastPinB == 1)
+            else if (display.currentTab == 2)
             {
-                if (pinA == 1 && pinB == 0 && i-1 >= 0)
-                {
-                    i--;
-                    spotify.enableClientVolumeChanged();
-                    spotify.setVolume(i);
-                }
-                if (pinA == 0 && pinB == 1 && i+1 <= 100)
-                {
-                    i++;
-                    spotify.enableClientVolumeChanged();
-                    spotify.setVolume(i);
-                }
+                if (pinA == 1 && pinB == 0 && j+1 <= 10) j++;
+                if (pinA == 0 && pinB == 1 && j-1 >= -1) j--;
             }
         }
-        else if (display.currentTab == 2)
+        
+        // Both last pin A & B is 1
+        if (lastPinA && lastPinB)
         {
-            if (lastPinA == 0 && lastPinB == 0)
+            if (display.currentTab == 1)
             {
-                if (pinA == 1 && pinB == 0 && j+1 <= 10)
-                {
-                    j++;
-                    spotify.librarySelectedTrackChanged = true;
-                    spotify.librarySelectedTrack = j;
-                }
-                if (pinA == 0 && pinB == 1 && j-1 >= -1)
-                {
-                    j--;
-                    spotify.librarySelectedTrackChanged = true;
-                    spotify.librarySelectedTrack = j;
-                }
+                if (pinA == 1 && pinB == 0 && i-1 >= 0) i--;
+                if (pinA == 0 && pinB == 1 && i+1 <= 100) i++;
             }
-            
-            if (lastPinA == 1 && lastPinB == 1)
+            else if (display.currentTab == 2)
             {
-                if (pinA == 1 && pinB == 0 && j-1 >= -1)
-                {
-                    j--;
-                    spotify.librarySelectedTrackChanged = true;
-                    spotify.librarySelectedTrack = j;
-                }
-                if (pinA == 0 && pinB == 1 && j+1 <= 10)
-                {
-                    j++;
-                    spotify.librarySelectedTrackChanged = true;
-                    spotify.librarySelectedTrack = j;
-                }
+                if (pinA == 1 && pinB == 0 && j-1 >= -1) j--;
+                if (pinA == 0 && pinB == 1 && j+1 <= 10) j++;
             }
-            if (j >= 10 || j < 0)
-            {
-                j = 0;
-            }
+        }
+
+        if ((lastPinA != pinA || lastPinB != pinB) && spotify.getVolumeProcent() != i)
+        {
+            spotify.enableClientVolumeChanged();
+            spotify.setVolume(i);
+        }
+
+        if ((lastPinA != pinA || lastPinB != pinB) && spotify.librarySelectedTrack != j)
+        {
+            spotify.librarySelectedTrackChanged = true;
+            spotify.librarySelectedTrack = j;
+            if (j >= 10 || j < 0) j = 0;
         }
         lastPinA = pinA;
         lastPinB = pinB;
@@ -189,22 +160,10 @@ void switches()
         }
         spotify.togglePlaying = true;
     }
-    if (digitalRead(nextSwitch) == LOW)
-    {
-        spotify.beginNext = true;
-    }
-    if (digitalRead(prevSwitch) == LOW)
-    {
-        spotify.beginPrev = true;
-    }
-    if (digitalRead(shuffleSwitch) == LOW)
-    {
-        spotify.toggleShuffle = true;
-    }
-    if (digitalRead(likeSwitch) == LOW)
-    {
-        spotify.beginLike = true;
-    }
+    if (digitalRead(nextSwitch) == LOW) spotify.beginNext = true;
+    if (digitalRead(prevSwitch) == LOW) spotify.beginPrev = true;
+    if (digitalRead(shuffleSwitch) == LOW) spotify.toggleShuffle = true;
+    if (digitalRead(likeSwitch) == LOW) spotify.beginLike = true;
     spotify.clientActionChange = true;
 }
 
@@ -352,8 +311,8 @@ void spotifyUpdate(void * parameters)
                     requests.begin("https://api.spotify.com/v1/me/tracks?ids=" + String(spotify.getItemID()));
                     requests.addAuthHeader(spotify.getAccessToken());
                     requests.send("PUT", "");
-                    // Add easter egg song 1 in 500k.
-                    if (random(0, 500000) == 42069)
+                    // Add easter egg song 1 in 1169.
+                    if (random(0, 1169) == 569)
                     {
                         requests.begin("https://api.spotify.com/v1/me/tracks?ids=6iD9kcWB4h25t7OX8Xk6wT");
                         requests.addAuthHeader(spotify.getAccessToken());
@@ -444,17 +403,13 @@ void libraryUpdate(void * parameters)
             if (display.currentTab == 1)
             {
                 spotify.libraryLoading = true;
-                display.updateTabs = true;
-                if (filesystem.imgDownloaded)
-                {
-                    filesystem.imgLoaded = true;
-                }
+                if (filesystem.imgDownloaded) filesystem.imgLoaded = true;
             }
             else if (display.currentTab == 2)
             {
                 spotify.libraryFetch = true;
-                display.updateTabs = true;
             }
+            display.updateTabs = true;
             display.tabChanged = false;
         }
         // Polling mutex to change positional index.
@@ -531,10 +486,7 @@ void setup()
     display.drawVolumeIconCircle();
     display.showShuffle(spotify.getShuffleState());
     filesystem.removeCurrentImgFile();
-    if (spotify.getIsPlaying()) 
-    {
-        display.showImageLoading();
-    }
+    if (spotify.getIsPlaying()) display.showImageLoading();
     display.showTitleName(spotify.getItemTitle(), spotify.getArtistsNames());
     display.showCurrentVersion();
     

@@ -63,6 +63,77 @@ void refreshPlaybackInfo()
     }
 }
 
+void spotifySendSwitchAction()
+{
+    if (spotify.togglePlaying)
+    {
+        if (spotify.getIsPlaying())
+        {
+            requests.begin("https://api.spotify.com/v1/me/player/pause");
+        }
+        else
+        {
+            requests.begin("https://api.spotify.com/v1/me/player/play");
+        }
+        requests.addAuthHeader(spotify.getAccessToken());
+        requests.send("PUT", "");
+        spotify.togglePlaying = false;
+        spotify.toggleIsPlaying();
+    }
+    if (spotify.beginNext)
+    {
+        requests.begin("https://api.spotify.com/v1/me/player/next");
+        requests.addAuthHeader(spotify.getAccessToken());
+        requests.send("POST", "");
+        spotify.beginNext = false;
+    }
+    if (spotify.beginPrev)
+    {
+        requests.begin("https://api.spotify.com/v1/me/player/previous");
+        requests.addAuthHeader(spotify.getAccessToken());
+        requests.send("POST", "");
+        spotify.beginPrev = false;
+    }
+    if (spotify.toggleShuffle)
+    {
+        spotify.enableShuffleChanged();
+        if (spotify.getShuffleState())
+        {
+            requests.begin("https://api.spotify.com/v1/me/player/shuffle?state=false");
+        }
+        else
+        {
+            requests.begin("https://api.spotify.com/v1/me/player/shuffle?state=true");
+        }
+        spotify.toggleShuffleState();
+        requests.addAuthHeader(spotify.getAccessToken());
+        requests.send("PUT", "");
+        spotify.toggleShuffle = false;
+    }
+    if (spotify.beginLike)
+    {
+        requests.clearResponse();
+        requests.begin("https://api.spotify.com/v1/me/tracks/contains?ids=" + String(spotify.getItemID()) + "," + String(spotify.getLinkedID()));
+        requests.addAuthHeader(spotify.getAccessToken());
+        requests.send("GET", "");
+        if (requests.getResponseString() == "[ false, false ]" || requests.getResponseString() == "[ false ]")
+        {
+            Serial.println("Liked!");
+            requests.begin("https://api.spotify.com/v1/me/tracks?ids=" + String(spotify.getItemID()));
+            requests.addAuthHeader(spotify.getAccessToken());
+            requests.send("PUT", "");
+            // Add easter egg song 1 in 1169.
+            if (random(0, 1169) == 569)
+            {
+                requests.begin("https://api.spotify.com/v1/me/tracks?ids=6iD9kcWB4h25t7OX8Xk6wT");
+                requests.addAuthHeader(spotify.getAccessToken());
+                requests.send("PUT", "");
+            }
+        }            
+        spotify.beginLike = false;
+    }
+}
+
 bool display_output(int16_t x, int16_t y, uint16_t w, uint16_t h, uint16_t* bitmap)
 {
     // Stop further decoding as image is running off bottom of screen
@@ -254,73 +325,7 @@ void spotifyUpdate(void * parameters)
         // Check if switches has triggered.
         if (spotify.clientActionChange)
         {
-            if (spotify.togglePlaying)
-            {
-                if (spotify.getIsPlaying())
-                {
-                    requests.begin("https://api.spotify.com/v1/me/player/pause");
-                }
-                else
-                {
-                    requests.begin("https://api.spotify.com/v1/me/player/play");
-                }
-                requests.addAuthHeader(spotify.getAccessToken());
-                requests.send("PUT", "");
-                spotify.togglePlaying = false;
-                spotify.toggleIsPlaying();
-            }
-            if (spotify.beginNext)
-            {
-                requests.begin("https://api.spotify.com/v1/me/player/next");
-                requests.addAuthHeader(spotify.getAccessToken());
-                requests.send("POST", "");
-                spotify.beginNext = false;
-            }
-            if (spotify.beginPrev)
-            {
-                requests.begin("https://api.spotify.com/v1/me/player/previous");
-                requests.addAuthHeader(spotify.getAccessToken());
-                requests.send("POST", "");
-                spotify.beginPrev = false;
-            }
-            if (spotify.toggleShuffle)
-            {
-                spotify.enableShuffleChanged();
-                if (spotify.getShuffleState())
-                {
-                    requests.begin("https://api.spotify.com/v1/me/player/shuffle?state=false");
-                }
-                else
-                {
-                    requests.begin("https://api.spotify.com/v1/me/player/shuffle?state=true");
-                }
-                spotify.toggleShuffleState();
-                requests.addAuthHeader(spotify.getAccessToken());
-                requests.send("PUT", "");
-                spotify.toggleShuffle = false;
-            }
-            if (spotify.beginLike)
-            {
-                requests.clearResponse();
-                requests.begin("https://api.spotify.com/v1/me/tracks/contains?ids=" + String(spotify.getItemID()) + "," + String(spotify.getLinkedID()));
-                requests.addAuthHeader(spotify.getAccessToken());
-                requests.send("GET", "");
-                if (requests.getResponseString() == "[ false, false ]" || requests.getResponseString() == "[ false ]")
-                {
-                    Serial.println("Liked!");
-                    requests.begin("https://api.spotify.com/v1/me/tracks?ids=" + String(spotify.getItemID()));
-                    requests.addAuthHeader(spotify.getAccessToken());
-                    requests.send("PUT", "");
-                    // Add easter egg song 1 in 1169.
-                    if (random(0, 1169) == 569)
-                    {
-                        requests.begin("https://api.spotify.com/v1/me/tracks?ids=6iD9kcWB4h25t7OX8Xk6wT");
-                        requests.addAuthHeader(spotify.getAccessToken());
-                        requests.send("PUT", "");
-                    }
-                }            
-                spotify.beginLike = false;
-            }
+            spotifySendSwitchAction();
             spotify.clientActionChange = false;
         }
 
@@ -350,7 +355,6 @@ void spotifyUpdate(void * parameters)
             spotify.libraryLoading = false;
             spotify.libraryLoaded = true;
             display.updateTabs = true;
-
             display.updateToSelectedTrack = true;
         }
 
@@ -389,7 +393,6 @@ void spotifyUpdate(void * parameters)
             filesystem.imgLoaded = true;
         }
         vTaskDelay(50 / portTICK_PERIOD_MS);
-
     }
 }
 
@@ -400,14 +403,17 @@ void libraryUpdate(void * parameters)
         // Polling mutex to tabSwitch. 
         if (display.tabChanged)
         {
-            if (display.currentTab == 1)
+            switch (display.currentTab)
             {
+            case 1:
                 spotify.libraryLoading = true;
                 if (filesystem.imgDownloaded) filesystem.imgLoaded = true;
-            }
-            else if (display.currentTab == 2)
-            {
+                break;
+            case 2:
                 spotify.libraryFetch = true;
+                break;
+            default:
+                break;
             }
             display.updateTabs = true;
             display.tabChanged = false;

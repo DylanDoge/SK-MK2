@@ -334,9 +334,6 @@ void Display::clearVolumeAndTabs()
 
 void Display::showSelectedTrack(const unsigned int selectedIndex)
 {
-    // for (int i = -1; i < 10; i++)
-    // {
-    // }
     tft.drawRect(0, (30*this->lastSelectedIndex)+10, 300, 30, TFT_BLACK);
     if (selectedIndex <= 9 && selectedIndex >= 0)
     {

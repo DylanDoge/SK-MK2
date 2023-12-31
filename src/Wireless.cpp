@@ -8,7 +8,7 @@ Wireless::Wireless(const char ssid[65], const char password[65])
 
 bool Wireless::connect()
 {
-    if (WiFi.status() == WL_CONNECTED) {return true;}
+    if (WiFi.status() == WL_CONNECTED) return true;
 
     WiFi.begin(SSID, PSK);
     Serial.print("Connecting to WiFi ..");
@@ -16,10 +16,7 @@ bool Wireless::connect()
     while (WiFi.status() != WL_CONNECTED) 
     {
         Serial.print(".");
-        if (millis()-connectTimeStart > 30000)
-        {
-            return false;
-        }
+        if (millis()-connectTimeStart > 30000) return false;
         delay(connectAttemptPeriod);
     }
 

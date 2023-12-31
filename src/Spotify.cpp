@@ -174,14 +174,16 @@ short Spotify::getVolumeProcent()
 bool Spotify::handleAccessTokenResponse(short response)
 {
     bool okResponse = false;
-    if (response == 400)
+    switch (response)
     {
+    case 400:
         Serial.println("Failed to Authenticate. Verify Credentials.");
         while (1) yield();
-    }
-    if (response == 200)
-    {
+    case 200:
         okResponse = true;
+        break;
+    default:
+        break;
     }
     return okResponse;
 }
@@ -190,23 +192,25 @@ bool Spotify::handleRefreshPlayerInfoResponse(short response)
 {
     // Boolean value for retry
     bool okResponse = false;
-    if (response == 401)
+    switch (response)
     {
+    case 401:
         Serial.println("Invalid or expired token. Reauthing...");
-    }
-    if (response == 204)
-    {
+        break;
+    case 204:
         Serial.println("Not playing content.");
         this->is_playing = false;
         const char name[12] = "Not playing";
         memcpy(this->item_name, name, strlen(name)+1);
         okResponse = true;
         this->refreshTime = 5000;
-    }
-    if (response == 200)
-    {
+        break;
+    case 200:
         okResponse = true;
         this->refreshTime = 1500;
+        break;
+    default:
+        break;
     }
     return okResponse;
 }
@@ -261,7 +265,8 @@ void Spotify::deserializePlayerState(char *data)
         return;
     }
 
-    if (doc["device"]["is_private_session"]) {
+    if (doc["device"]["is_private_session"]) 
+    {
         Serial.println("I: User is in private session");
         this->isPrivateSession = doc["device"]["is_private_session"];
         doc.clear();
@@ -270,14 +275,10 @@ void Spotify::deserializePlayerState(char *data)
     
     // Assuming 4 values episode, track, ad, unknown.
     String trackType = doc["currently_playing_type"];
-    if (trackType == "ad" || trackType == "unknown") {
+    if (trackType == "ad" || trackType == "unknown" || doc["item"] == nullptr) 
+    {
         Serial.println("I: Not playing track");
         doc.clear();
-        return;
-    }
-
-    if (doc["item"] == nullptr)
-    {
         return;
     }
 
@@ -332,7 +333,6 @@ void Spotify::deserializePlayerState(char *data)
             if (artistNameLength < 45)
             {
                 artistsCombined = artistsCombined + curArtistName + " ";
-                // Serial.println(artistsCombined);
             }
         }
         this->artists_name = artistsCombined;
@@ -347,7 +347,8 @@ void Spotify::deserializePlayerState(char *data)
         const char *name = item["name"]; // "Le Cygne"
         memcpy(this->item_name, name, strlen(name)+1);
         
-    } else if (trackType == "episode")
+    } 
+    else if (trackType == "episode")
     {
         JsonObject item = doc["item"];
 
@@ -390,10 +391,11 @@ void Spotify::deserializeSavedTracks(char *data)
     StaticJsonDocument<1536> doc;
     DeserializationError error = deserializeJson(doc, data, DeserializationOption::Filter(filter));
 
-    if (error) {
-    Serial.print("deserializeJson() failed: ");
-    Serial.println(error.c_str());
-    return;
+    if (error) 
+    {
+        Serial.print("deserializeJson() failed: ");
+        Serial.println(error.c_str());
+        return;
     }
 
     JsonArray items = doc["items"];

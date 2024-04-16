@@ -1,0 +1,147 @@
+* {
+    margin: 0;
+}
+
+#wrapper {
+    display: grid;
+    grid-template-rows: 20% 70% 10%;
+    height: 100vh;
+}
+
+body {
+    background-color: black;
+}
+
+header {
+    color: white;
+    height: 100px;
+}
+
+main {
+    height: 1fr;
+}
+
+#tokenSection {
+    display: none;
+    color: white;
+    align-items: center;
+    justify-content: center;
+    height: 50%;
+}
+
+#authInfoSection {
+    display: none;
+    color: white;
+    align-items: center;
+    justify-content: center;
+    height: 50%;
+}
+
+#tokenForm {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    column-gap: 25px;
+    row-gap: 1px;
+    font-size: 34px;
+    margin-bottom: 20px;
+}
+
+#authInfo {
+    max-width: 65vw;
+}
+
+#tokenForm input {
+    width: 300px;
+}
+
+#authSubmit, #clearBtn {
+    transition: 250ms cubic-bezier(0.165, 0.84, 0.44, 1);
+    font-size: large;
+    border: 1px solid white;
+    background-color: black;
+    color: white;
+    border-radius: 4px;
+    padding: 3px 10px;
+}
+
+#authSubmit:hover {
+    background-color: rgb(48, 48, 48);
+}
+
+#clearBtn:hover {
+    background-color: rgb(77, 0, 0);
+}
+
+.open-sans {
+    font-family: "Open Sans", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+    font-variation-settings:
+      "wdth" 100;
+}
+
+.arial {
+    font-family: "Arial", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+    font-variation-settings:
+      "wdth" 100;
+}
+
+#refreshToken::selection, #accessToken::selection {
+    background-color: rgb(113, 2, 2);
+}
+
+footer {
+    display: flex;
+    flex-direction: column-reverse;
+    color: white;
+    margin: 4px;
+}
+
+footer p a {
+    color: rgb(0, 89, 255);
+}
+
+.material-symbols-outlined {
+    font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24
+}
+
+.flex-row {
+    display: flex;
+    flex-direction: row;
+}
+
+.flex-center {
+    display: flex;
+    align-items: center;
+}
+
+.copyIcon {
+    transition: 1s cubic-bezier(0.075, 0.82, 0.165, 1);
+    color: darkgray;
+    background-color: black;
+    border: none;
+}
+.copyIcon:hover {
+    color: white;
+}
+
+@keyframes copyBlink {
+    0% {opacity: 1.00;}
+    50% {opacity: 0.00;}
+    100% {opacity: 1.00;}
+}
+
+.copyBlink {
+    animation-name: copyBlink;
+    animation-duration: 500ms;
+    animation-iteration-count: 1;
+}

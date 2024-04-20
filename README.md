@@ -1,5 +1,5 @@
 # Volume Knob MK2 for Spotify
-> A Spotify Web API embedded project to display Spotify information and control it with an interface.
+> A Spotify Web API embedded project to display Spotify playback information and control it with switches and a knob.
 Written for a ESP32-S3 using Arduino Framework on PlatformIO.
 
 This project was a solution for an inexpensive way to modify and view a user's Spotify playback state and being a standalone device. Offloading from the listening device was crucial for having an independent device that can fully function on only an internet connection via Wi-Fi and power. This was to make the device as portable as possible, and to be used off the desk and as a controller for Spotify, i.e. the living room. Having it tethered to a computer, could have benefits as to use its superior computational power to fetch data faster and handle higher data conversions such as font glyphs. However, the project’s goal is to stay as an IOT and an embedded device and using a computer may reduce the challenges of memory constraints.

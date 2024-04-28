@@ -10,7 +10,7 @@ class Spotify
 private:
     // Class attributes
     bool deviceActive;
-    bool supportsVolume;
+    bool supportsVolume = true;
     bool isPrivateSession;
     bool isRestricted;
     short volumeProcent;
@@ -67,14 +67,17 @@ public:
     bool toggleShuffle;
     bool beginLike;
     bool is_playingChanged;
+    bool spotifyVolumeChanged;
+    bool supportsVolumeChanged;
 
     String trackTitles[11] = {};
     String trackArtists[11] = {};
     String trackURIs[11] = {};
     unsigned int totalTracks = 0;
-    unsigned int currentLibraryPage = 3;
+    unsigned int currentLibraryPage = 1;
     int librarySelectedTrack = 0;
     unsigned int libraryTotalPages = 0;
+    unsigned int libraryTracksPerPage = 9;
     bool librarySelectedTrackChanged;
     bool libraryPlayCurrent;
     bool libraryFetch;
@@ -125,6 +128,8 @@ public:
      * the Spotify API. 
     */
     bool getClientVolumeChanged();
+
+    bool getSupportsVolume();
 
     void toggleClientVolumeChanged();
 

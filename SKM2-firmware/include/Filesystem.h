@@ -19,7 +19,9 @@ public:
     // Halt program if FS has failed.
     void status();
 
-    void removeCurrentImgFile();
+    bool removeCurrentImgFile();
+
+    bool exist(String &path);
 };
 
 #endif

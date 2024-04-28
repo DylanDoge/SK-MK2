@@ -30,10 +30,16 @@ void Filesystem::status()
     if (this->failed) while (1) yield(); // Stay here twiddling thumbs waiting
 }
 
-void Filesystem::removeCurrentImgFile()
+bool Filesystem::removeCurrentImgFile()
 {
     if (LittleFS.exists("/cover.jpg")) {
         Serial.println("Removing old cover image.");
-        LittleFS.remove("/cover.jpg");
+        return LittleFS.remove("/cover.jpg");
     }
+    return true;
+}
+
+bool Filesystem::exist(String &path)
+{
+    return LittleFS.exists(path);
 }

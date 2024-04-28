@@ -51,7 +51,8 @@ void Display::showPlayPauseIcon(bool is_playing)
     tft.fillRect(startX,startY,7,11,TFT_BLACK);
     if (is_playing)
     {
-        tft.fillTriangle(startX,startY,startX,371,startX+5,365, TFT_WHITE);
+        tft.fillTriangle(startX,startY,startX,startY+10,startX+5,365, TFT_WHITE);
+        tft.drawPixel(startX+5,startY+4, TFT_BLACK);
     } 
     else 
     {
@@ -64,21 +65,21 @@ void Display::showTitleName(const char* title, const String artistsName)
 {
     const int tftWidth = tft.width();
     tft.setTextColor(0xce59);
-    tft.fillRect(0, 420+5, tftWidth, 8, TFT_BLACK); // Clear Artist Name row
+    tft.fillRect(0, 420+5, tftWidth, 8*2, TFT_BLACK); // Clear Artist Name row
     tft.setCursor(6, 420+5);
     tft.setTextSize(1);
     tft.println(artistsName);    
 
     // tft.loadFont("FreeSans-24", LittleFS);
     tft.setTextColor(TFT_WHITE);
-    tft.fillRect(0, 386+5, tftWidth, 24, TFT_BLACK); // Clear Name title row
+    tft.fillRect(0, 386+5, tftWidth, 24+4, TFT_BLACK); // Clear Name title row
     tft.setCursor(6, 387+5);
     tft.setTextSize(2);
     tft.println(title);
     // tft.unloadFont();
 }
 
-void Display::showImage(String path, const unsigned int x, const unsigned int y)
+void Display::showImage(String path, const int x, const int y)
 {
     TJpgDec.drawFsJpg(x, y, path, LittleFS);
 }
@@ -86,7 +87,6 @@ void Display::showImage(String path, const unsigned int x, const unsigned int y)
 void Display::showProgressTime(const short progressMin, const short progressSec)
 {
     const int tftWidth = tft.width();
-    tft.setTextFont(1);
     tft.fillRect(22, 368, 29, 7, TFT_BLACK);
     tft.setCursor(22, 368);
     tft.setTextColor(TFT_WHITE);
@@ -131,7 +131,7 @@ void Display::showProgressBar(const long progressMs, const long durationMs)
     long progress = 0;
     if (progressMs != durationMs)
     {
-        progress = map(progressMs, 0, durationMs, 22, 284-22);
+        progress = map(progressMs, 1, durationMs, 1, 284-22);
     }
     tft.fillRect(22, 361, progress, 2, 0x07FF);
 }
@@ -150,10 +150,14 @@ void Display::showImageLoading()
 }
 
 // Mathmatically get x,y from dividing circle chunks to one
-void Display::showVolume(const unsigned short volume)
+void Display::showVolume(const unsigned short volume, bool supportsVolume)
 {
     const String volumeStr = String(volume);
     const unsigned short xShift = 2;
+    int _volKnobArrowColor = this->volKnobArrowColor;
+    int volumeColor = TFT_WHITE;
+    if (!supportsVolume) {volumeColor = 0x5aeb;} 
+
     tft.fillRect(301+xShift, 78, 20, 7, TFT_BLACK);
     if (volume < 10)
     {
@@ -168,7 +172,7 @@ void Display::showVolume(const unsigned short volume)
         tft.setCursor(301+xShift,78);
     }
     tft.setTextSize(1);
-    tft.setTextColor(TFT_WHITE);
+    tft.setTextColor(volumeColor);
     tft.print(volumeStr);
 
     int volumeProgress = map(volume, 0, 100, 309, 96);
@@ -176,41 +180,41 @@ void Display::showVolume(const unsigned short volume)
     {
         tft.fillRect(307+xShift, 96, 4, volumeProgress-96, TFT_BLACK);
     }
-    tft.fillRect(307+xShift, volumeProgress, 4, 309-volumeProgress, TFT_WHITE);
+    tft.fillRect(307+xShift, volumeProgress, 4, 309-volumeProgress, volumeColor);
 
     int volumeKnobStep = floor(volume/volumeStep);
-    if (volumeKnobStep != floor(this->previousVolume/volumeStep))
+    // if (volumeKnobStep != floor(this->previousVolume/volumeStep))
+    // {
+    tft.fillCircle(volKnobCenterPosX, volKnobCenterPosY, 4, TFT_BLACK);
+    switch (volumeKnobStep)
     {
-        tft.fillCircle(volKnobCenterPosX, volKnobCenterPosY, 4, TFT_BLACK);
-        switch (volumeKnobStep)
-        {
-        case 0:
-            tft.drawLine(volKnobCenterPosX, volKnobCenterPosY, 306, 334, volKnobArrowColor);
-            break;
-        case 1:
-            tft.drawFastHLine(volKnobCenterPosX-4, volKnobCenterPosY, 5, volKnobArrowColor);
-            break;
-        case 2:
-            tft.drawLine(volKnobCenterPosX, volKnobCenterPosY, 306, 328, volKnobArrowColor);
-            break;
-        case 3:
-            tft.drawFastVLine(volKnobCenterPosX, volKnobCenterPosY-4, 5, volKnobArrowColor);
-            break;
-        case 4:
-            tft.drawLine(volKnobCenterPosX, volKnobCenterPosY, 312, 328, volKnobArrowColor);
-            break;
-        case 5:
-            tft.drawFastHLine(volKnobCenterPosX, volKnobCenterPosY, 5, volKnobArrowColor);
-            break;
-        case 6:
-            tft.drawLine(volKnobCenterPosX, volKnobCenterPosY, 312, 334, volKnobArrowColor);
-            break;
-        default:
-            tft.drawFastVLine(volKnobCenterPosX, volKnobCenterPosY, 5, volKnobArrowColor);
-            break;
-        }
+    case 0:
+        tft.drawLine(volKnobCenterPosX, volKnobCenterPosY, 306, 334, _volKnobArrowColor);
+        break;
+    case 1:
+        tft.drawFastHLine(volKnobCenterPosX-4, volKnobCenterPosY, 5, _volKnobArrowColor);
+        break;
+    case 2:
+        tft.drawLine(volKnobCenterPosX, volKnobCenterPosY, 306, 328, _volKnobArrowColor);
+        break;
+    case 3:
+        tft.drawFastVLine(volKnobCenterPosX, volKnobCenterPosY-4, 5, _volKnobArrowColor);
+        break;
+    case 4:
+        tft.drawLine(volKnobCenterPosX, volKnobCenterPosY, 312, 328, _volKnobArrowColor);
+        break;
+    case 5:
+        tft.drawFastHLine(volKnobCenterPosX, volKnobCenterPosY, 5, _volKnobArrowColor);
+        break;
+    case 6:
+        tft.drawLine(volKnobCenterPosX, volKnobCenterPosY, 312, 334, _volKnobArrowColor);
+        break;
+    default:
+        tft.drawFastVLine(volKnobCenterPosX, volKnobCenterPosY, 5, _volKnobArrowColor);
+        break;
     }
-    
+    drawVolumeIconCircle();
+    // }
     this->previousVolume = volume;
 }
 
@@ -254,24 +258,24 @@ void Display::showTabs()
     uint8_t squareLength = 15;
     uint8_t topTextPadding = 4;
     uint8_t leftTextPadding = 5;
-    tft.fillRect(tft.width()-squareLength, 0, squareLength, squareLength*2+1, TFT_WHITE);
+    tft.fillRect(tft.width()-squareLength, 0, squareLength, squareLength*2+1, 0x5aab);
     tft.setTextSize(1);
     tft.setCursor(tft.width()-squareLength+leftTextPadding, topTextPadding);
     switch (currentTab)
     {
         // Tab 1: Player
         case 1:
-            tft.fillRect(tft.width()-squareLength, 0, squareLength, squareLength, 0x5aab);
-            tft.setTextColor(TFT_WHITE);
-            tft.print("P");
+            tft.fillRect(tft.width()-squareLength, 0, squareLength, squareLength, TFT_WHITE);
             tft.setTextColor(TFT_BLACK);
+            tft.print("P");
+            tft.setTextColor(TFT_WHITE);
             break;
         // Tab 2: Library
         case 2:
-            tft.fillRect(tft.width()-squareLength, squareLength+1, squareLength, squareLength, 0x5aab);
-            tft.setTextColor(TFT_BLACK);
-            tft.print("P");
+            tft.fillRect(tft.width()-squareLength, squareLength+1, squareLength, squareLength, TFT_WHITE);
             tft.setTextColor(TFT_WHITE);
+            tft.print("P");
+            tft.setTextColor(TFT_BLACK);
             break;
         default:
             break;
@@ -297,21 +301,25 @@ void Display::swapTab()
     }
 }
 
-void Display::showLibrary(String *tracksTitles, String *trackArtists, unsigned int currentPage, unsigned int totalTracks, unsigned int totalPages)
+void Display::showLibrary(String *tracksTitles, String *trackArtists, unsigned int currentPage, unsigned int totalTracks, unsigned int totalPages, unsigned int tracksPerPage)
 {
-    tft.fillRect(0, 0, 300, 52+300, TFT_BLACK);
+    // Clear Covert Art: x, y offset, image width, image heigth. Original 52px vertical offset. 
+    tft.fillRect(0, 45, 300, 300, TFT_BLACK);
     tft.setTextSize(1);
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < tracksPerPage; i++)
     {
         tft.setTextColor(TFT_WHITE);
-        tft.setCursor(5, (i*30)+16);
+        // Title x: padding, y: index*vertical title height + offset.
+        // +30: skip one track. +5: offset to lineup to cover art.
+        tft.setCursor(5, (i*30)+16+30+5);
         tft.print(tracksTitles[i]);
         tft.setTextColor(0xb596);
-        tft.setCursor(5, (i*30)+26);
+        // Artist Name: x: padding, y: index*vertical name height + offset.
+        tft.setCursor(5, (i*30)+26+30+5);
         tft.print(trackArtists[i]);
     }
     tft.setTextColor(TFT_WHITE);
-    tft.setCursor(100, 22+300);
+    tft.setCursor(100, 22+300+5);
     tft.print("page: ");
     tft.print(currentPage);
     tft.print("/");
@@ -320,7 +328,8 @@ void Display::showLibrary(String *tracksTitles, String *trackArtists, unsigned i
 
 void Display::loadingLibrary()
 {
-    tft.fillRect(0, 0, 300, 52+300, TFT_BLACK);
+    // Clear Covert Art: x, y offset, image width, image heigth. Original 52px vertical offset. 
+    tft.fillRect(0, 45, 300, 300, TFT_BLACK);
     tft.setTextSize(1);
     tft.setTextColor(TFT_WHITE);
     tft.setCursor(90, 30+150);
@@ -334,11 +343,11 @@ void Display::clearVolumeAndTabs()
 
 void Display::showSelectedTrack(const unsigned int selectedIndex)
 {
-    tft.drawRect(0, (30*this->lastSelectedIndex)+10, 300, 30, TFT_BLACK);
+    tft.drawRect(0, (30*this->lastSelectedIndex)+10+30+5, 300, 30, TFT_BLACK);
     if (selectedIndex <= 9 && selectedIndex >= 0)
     {
         this->lastSelectedIndex = selectedIndex;
-        tft.drawRect(0, (30*selectedIndex)+10, 300, 30, TFT_WHITE);
+        tft.drawRect(0, (30*selectedIndex)+10+30+5, 300, 30, TFT_WHITE);
     }
 }
 
@@ -347,6 +356,6 @@ void Display::showCurrentVersion()
     tft.setCursor(0, 470);
     tft.setTextSize(1);
     tft.setTextColor(0xef7d);
-    tft.print("SKM2 v2.11b BETA");
+    tft.print("SKM2 v2.11c BETA");
     tft.setTextColor(TFT_WHITE);
 }

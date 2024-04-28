@@ -71,7 +71,7 @@ String Requests::getResponseString()
 
 bool Requests::getFile(String url, const char *filename)
 {
-    // If it exists then no need to fetch it
+    // If it exists, then no need to fetch it
     if (LittleFS.exists(filename)) 
     {
         Serial.print("Found ");
@@ -146,6 +146,7 @@ bool Requests::getFile(String url, const char *filename)
         else 
         {
           Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
+          return 0;
         }
         http.end();
     }

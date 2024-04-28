@@ -91,6 +91,11 @@ bool Spotify::getClientVolumeChanged()
     return this->clientVolumeChanged;
 }
 
+bool Spotify::getSupportsVolume()
+{
+    return this->supportsVolume;
+}
+
 void Spotify::toggleClientVolumeChanged()
 {
     this->clientVolumeChanged = !this->clientVolumeChanged;
@@ -292,9 +297,11 @@ void Spotify::deserializePlayerState(char *data)
 
     this->deviceActive = device["is_active"]; // true
     this->isRestricted = device["is_restricted"]; // false
+    this->supportsVolumeChanged = (this->supportsVolume != device["supports_volume"]) ? 1 : 0;
     this->supportsVolume = device["supports_volume"]; // true
     if (!clientVolumeChanged)
     {
+        this->spotifyVolumeChanged = (this->volumeProcent != device["volume_percent"]) ? 1 : 0; // 100
         this->volumeProcent = device["volume_percent"]; // 100
     }
 
@@ -402,12 +409,12 @@ void Spotify::deserializeSavedTracks(char *data)
 
     JsonArray items = doc["items"];
     totalTracks = doc["total"];
-    libraryTotalPages = floor(totalTracks/10);
-    if (totalTracks > libraryTotalPages*10)
+    libraryTotalPages = floor(totalTracks/libraryTracksPerPage);
+    if (totalTracks > libraryTotalPages*libraryTracksPerPage)
     {
         libraryTotalPages++;
     }
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < libraryTracksPerPage; i++)
     {
         JsonObject items_track = items[i]["track"];
         const char *track_name = items_track["name"];

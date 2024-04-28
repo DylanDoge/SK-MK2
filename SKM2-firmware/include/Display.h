@@ -5,7 +5,7 @@
 #include <Arduino.h>
 #include <TFT_eSPI.h>       // Hardware-specific library
 #include <TJpg_Decoder.h>
-#include "Sprites.h" 
+// #include "Sprites.h" 
 
 // #define TFT_BLACK 0xf7de
 // #define TFT_WHITE 0x0000
@@ -14,7 +14,7 @@ class Display
 {
 private:
     TFT_eSPI tft = TFT_eSPI();         // Invoke custom library
-    short previousVolume = 101;
+    short previousVolume = -1;
     const float volumeStep = 16.6666;  // rounded 100/6. Steps between 1 and 7
     const short volKnobCenterPosX = 309;
     const short volKnobCenterPosY = 331;
@@ -44,6 +44,7 @@ public:
     bool tabChanged;
     bool updateTabs;
     bool updateToSelectedTrack;
+    bool updateVolume;
 
     Display() {}
 
@@ -65,7 +66,7 @@ public:
 
     void showTitleName(const char* title, const String artistsName);
 
-    void showImage(String path, const unsigned int x, const unsigned int y);
+    void showImage(String path, const int x, const int y);
 
     void showProgressTime(const short progressMin, const short progressSec);
 
@@ -77,7 +78,7 @@ public:
 
     void showImageLoading();
 
-    void showVolume(const unsigned short volume);
+    void showVolume(const unsigned short volume, bool supportsVolume);
 
     void drawVolumeIconCircle();
 
@@ -89,7 +90,7 @@ public:
 
     void swapTab();
 
-    void showLibrary(String *tracksTitles, String *trackArtists, unsigned int currentPage, unsigned int totalTracks, unsigned int totalPages);
+    void showLibrary(String *tracksTitles, String *trackArtists, unsigned int currentPage, unsigned int totalTracks, unsigned int totalPages, unsigned int tracksPerPage);
 
     void loadingLibrary();
 

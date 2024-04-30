@@ -1,3 +1,7 @@
+<div align="center">
+<img src="https://raw.githubusercontent.com/DylanDoge/SK-MK2/main/web-auth/repo-img/device-2_11c.jpg" width="500"></img>
+</div><br><br>
+
 # Volume Knob MK2 for Spotify
 > A Spotify Web API embedded project to display Spotify playback information and control it with switches and a knob.
 Written for a ESP32-S3 using Arduino Framework on PlatformIO.
